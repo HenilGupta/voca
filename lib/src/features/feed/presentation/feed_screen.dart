@@ -11,7 +11,8 @@ class FeedScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final profiles = ref.watch(feedNotifierProvider);
+    final feedState = ref.watch(feedNotifierProvider);
+    final profiles = feedState.profiles;
 
     return Scaffold(
       appBar: AppBar(
