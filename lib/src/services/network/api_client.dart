@@ -1,9 +1,7 @@
 import 'package:dio/dio.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../shared/utils/app_logger.dart';
-
-part 'api_client.g.dart';
 
 /// Custom logging interceptor for API requests and responses.
 /// 
@@ -55,8 +53,7 @@ Stack Trace: ${err.stackTrace}''';
 /// - Custom logging interceptor for debugging
 /// - Standard timeout configurations
 /// - JSON content type headers
-@riverpod
-Dio apiClient(ApiClientRef ref) {
+final apiClientProvider = Provider<Dio>((ref) {
   final dio = Dio();
 
   // Configure base options
@@ -75,14 +72,13 @@ Dio apiClient(ApiClientRef ref) {
   dio.interceptors.add(LoggingInterceptor());
 
   return dio;
-}
+});
 
 /// Alternative API client provider for mock/testing environments.
 /// 
 /// Can be used to override the main apiClient provider during testing
 /// or when the backend API is unavailable.
-@riverpod
-Dio mockApiClient(MockApiClientRef ref) {
+final mockApiClientProvider = Provider<Dio>((ref) {
   final dio = Dio();
 
   dio.options = BaseOptions(
@@ -100,4 +96,4 @@ Dio mockApiClient(MockApiClientRef ref) {
   dio.interceptors.add(LoggingInterceptor());
 
   return dio;
-}
+});

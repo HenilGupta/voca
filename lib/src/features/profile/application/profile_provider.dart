@@ -1,12 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../domain/user_profile.dart';
 
-part 'profile_provider.g.dart';
-
-@riverpod
-Future<UserProfile> userProfile(Ref ref, {required String userId}) async {
+final userProfileProvider = FutureProvider.family<UserProfile, String>((ref, userId) async {
   // Simulate network fetch – replace with real API call.
   await Future.delayed(const Duration(milliseconds: 300));
 
@@ -19,4 +15,4 @@ Future<UserProfile> userProfile(Ref ref, {required String userId}) async {
     imageSemanticLabel: 'Photo of Sarah, smiling in a park',
     interests: ['Hiking', 'Coffee', 'Reading'],
   );
-}
+});
