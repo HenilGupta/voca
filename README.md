@@ -26,6 +26,7 @@ lib/
     ├── routing/
     │   └── app_router.dart            # GoRouter — /sign-in (SignInScreen), / (FeedScreen), /profile/:userId (ProfileScreen)
     │   └── app_router.dart            # GoRouter with onboarding protection and routing
+    │   └── app_router.dart            # GoRouter — /sign-in (SignInScreen), / (FeedScreen), /profile/:userId (ProfileScreen)
     ├── shared/
     │   ├── theme/
     │   │   └── app_theme.dart         # Strict B&W ColorScheme.dark, bold 3px focus borders (keyboard nav)
@@ -36,6 +37,9 @@ lib/
     │       ├── accessible_button.dart    # Elevated/Outlined button with haptics + semantic label
     │       └── accessible_card.dart      # MergeSemantics card — screen reader reads as one announcement
     ├── features/
+    │   ├── auth/
+    │   │   └── presentation/
+    │   │       └── sign_in_screen.dart       # Simple sign-in form (email + password) with bottom Sign Up action
     │   ├── onboarding/                    # ✨ NEW — User registration onboarding flow
     │   │   ├── domain/
     │   │   │   └── onboarding_state.dart      # OnboardingState model with steps and completion status
@@ -184,6 +188,7 @@ The app uses a clean repository pattern for data fetching:
 - [x] ✅ **Route Protection** — Automatic redirect to onboarding for new users
 - [x] ✅ **Voice Registration** — Simulated AI voice capture and audio playback
 - [x] ✅ **Accessibility Integration** — Full WCAG compliance in onboarding flow
+- [x] ✅ **Authentication Entry UI** — Sign In screen with bottom Sign Up action
 - [ ] Replace mock API base URL with production endpoint
 - [ ] Implement real audio recording and playback functionality
 - [ ] Add user persistence (SharedPreferences/Secure Storage)
