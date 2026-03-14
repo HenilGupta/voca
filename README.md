@@ -199,6 +199,24 @@ The app uses a clean repository pattern for data fetching:
 
 ## Development Log
 
+### 2024-03-14: Accessibility & Theme Consistency Fixes
+**Issues Fixed:**
+1. **Accessibility Violations** — Added semantic labels and tooltips to all `IconButton` widgets in onboarding screens
+2. **Navigation Error** — Replaced `Navigator.pop()` calls with GoRouter's `context.go()` to prevent "popped last page off stack" errors
+3. **Theme Consistency** — Refactored all onboarding screens to follow strict B&W theme:
+   - Removed gradients, `Colors.grey[]` shades, and colored backgrounds
+   - Applied consistent black background with white text/borders
+   - Updated all buttons to use white-on-black or black-on-white only
+   - Fixed `AlertDialog` styling to match B&W theme
+
+**Files Modified:**
+- `simple_manual_registration_screen.dart` — B&W theme, GoRouter navigation, semantic labels
+- `simple_select_registration_type_screen.dart` — B&W theme, removed gradient
+- `simple_ai_voice_registration_screen.dart` — B&W theme, GoRouter navigation, semantic labels
+- `simple_audio_playback_screen.dart` — B&W theme, GoRouter navigation, semantic labels
+
+---
+
 ### ✅ Onboarding Feature Implementation (Latest)
 **Architecture Integration**: Successfully integrated 4-screen onboarding flow following established clean architecture patterns.
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../application/onboarding_provider.dart';
 
 class SimpleManualRegistrationScreen extends ConsumerStatefulWidget {
@@ -51,9 +52,8 @@ class _SimpleManualRegistrationScreenState extends ConsumerState<SimpleManualReg
         ),
       );
 
-      // Navigate back to let app router handle the next navigation
-      Navigator.pop(context);
-      Navigator.pop(context);
+      // Use GoRouter to navigate to feed - router redirect will handle it
+      context.go('/');
     }
   }
 
@@ -62,10 +62,14 @@ class _SimpleManualRegistrationScreenState extends ConsumerState<SimpleManualReg
     return Scaffold(
       appBar: AppBar(
         title: const Text('Manual Registration'),
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/onboarding'),
+          tooltip: 'Go back to registration type selection',
+        ),
       ),
       body: Container(
+        color: Colors.black,
         padding: const EdgeInsets.all(24.0),
         child: Form(
           key: _formKey,
@@ -77,10 +81,13 @@ class _SimpleManualRegistrationScreenState extends ConsumerState<SimpleManualReg
                 Center(
                   child: Column(
                     children: [
-                      const Icon(
-                        Icons.person_add,
-                        size: 60,
-                        color: Colors.black,
+                      Semantics(
+                        label: 'Add person icon',
+                        child: const Icon(
+                          Icons.person_add,
+                          size: 60,
+                          color: Colors.white,
+                        ),
                       ),
                       const SizedBox(height: 16),
                       const Text(
@@ -88,15 +95,15 @@ class _SimpleManualRegistrationScreenState extends ConsumerState<SimpleManualReg
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
-                          color: Colors.black,
+                          color: Colors.white,
                         ),
                       ),
                       const SizedBox(height: 8),
-                      Text(
+                      const Text(
                         'Fill in your details below',
                         style: TextStyle(
                           fontSize: 16,
-                          color: Colors.grey[600],
+                          color: Colors.white70,
                         ),
                       ),
                     ],
@@ -107,14 +114,25 @@ class _SimpleManualRegistrationScreenState extends ConsumerState<SimpleManualReg
                 // Full Name Field
                 TextFormField(
                   controller: _nameController,
+                  style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
                     labelText: 'Full Name',
-                    prefixIcon: const Icon(Icons.person),
+                    labelStyle: const TextStyle(color: Colors.white70),
+                    prefixIcon: const Icon(Icons.person, color: Colors.white),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.white, width: 2),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.white54, width: 1.5),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.white, width: 3),
                     ),
                     filled: true,
-                    fillColor: Colors.grey[100],
+                    fillColor: Colors.black,
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -130,14 +148,25 @@ class _SimpleManualRegistrationScreenState extends ConsumerState<SimpleManualReg
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
+                  style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
                     labelText: 'Email Address',
-                    prefixIcon: const Icon(Icons.email),
+                    labelStyle: const TextStyle(color: Colors.white70),
+                    prefixIcon: const Icon(Icons.email, color: Colors.white),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.white, width: 2),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.white54, width: 1.5),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.white, width: 3),
                     ),
                     filled: true,
-                    fillColor: Colors.grey[100],
+                    fillColor: Colors.black,
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -156,14 +185,25 @@ class _SimpleManualRegistrationScreenState extends ConsumerState<SimpleManualReg
                 TextFormField(
                   controller: _phoneController,
                   keyboardType: TextInputType.phone,
+                  style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
                     labelText: 'Phone Number',
-                    prefixIcon: const Icon(Icons.phone),
+                    labelStyle: const TextStyle(color: Colors.white70),
+                    prefixIcon: const Icon(Icons.phone, color: Colors.white),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.white, width: 2),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.white54, width: 1.5),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.white, width: 3),
                     ),
                     filled: true,
-                    fillColor: Colors.grey[100],
+                    fillColor: Colors.black,
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -179,13 +219,18 @@ class _SimpleManualRegistrationScreenState extends ConsumerState<SimpleManualReg
                 TextFormField(
                   controller: _passwordController,
                   obscureText: !_isPasswordVisible,
+                  style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
                     labelText: 'Password',
-                    prefixIcon: const Icon(Icons.lock),
+                    labelStyle: const TextStyle(color: Colors.white70),
+                    prefixIcon: const Icon(Icons.lock, color: Colors.white),
                     suffixIcon: IconButton(
                       icon: Icon(
                         _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                        color: Colors.white,
+                        semanticLabel: _isPasswordVisible ? 'Hide password' : 'Show password',
                       ),
+                      tooltip: _isPasswordVisible ? 'Hide password' : 'Show password',
                       onPressed: () {
                         setState(() {
                           _isPasswordVisible = !_isPasswordVisible;
@@ -194,9 +239,18 @@ class _SimpleManualRegistrationScreenState extends ConsumerState<SimpleManualReg
                     ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.white, width: 2),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.white54, width: 1.5),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.white, width: 3),
                     ),
                     filled: true,
-                    fillColor: Colors.grey[100],
+                    fillColor: Colors.black,
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -215,13 +269,18 @@ class _SimpleManualRegistrationScreenState extends ConsumerState<SimpleManualReg
                 TextFormField(
                   controller: _confirmPasswordController,
                   obscureText: !_isConfirmPasswordVisible,
+                  style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
                     labelText: 'Confirm Password',
-                    prefixIcon: const Icon(Icons.lock_outline),
+                    labelStyle: const TextStyle(color: Colors.white70),
+                    prefixIcon: const Icon(Icons.lock_outline, color: Colors.white),
                     suffixIcon: IconButton(
                       icon: Icon(
                         _isConfirmPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                        color: Colors.white,
+                        semanticLabel: _isConfirmPasswordVisible ? 'Hide password confirmation' : 'Show password confirmation',
                       ),
+                      tooltip: _isConfirmPasswordVisible ? 'Hide password confirmation' : 'Show password confirmation',
                       onPressed: () {
                         setState(() {
                           _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
@@ -230,9 +289,18 @@ class _SimpleManualRegistrationScreenState extends ConsumerState<SimpleManualReg
                     ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.white, width: 2),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.white54, width: 1.5),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.white, width: 3),
                     ),
                     filled: true,
-                    fillColor: Colors.grey[100],
+                    fillColor: Colors.black,
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -255,18 +323,18 @@ class _SimpleManualRegistrationScreenState extends ConsumerState<SimpleManualReg
                   child: ElevatedButton(
                     onPressed: _submitForm,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.black,
-                      foregroundColor: Colors.white,
+                      backgroundColor: Colors.white,
+                      foregroundColor: Colors.black,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      elevation: 3,
+                      elevation: 0,
                     ),
                     child: const Text(
                       'Register',
                       style: TextStyle(
                         fontSize: 18,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
@@ -276,11 +344,11 @@ class _SimpleManualRegistrationScreenState extends ConsumerState<SimpleManualReg
                 // Back to selection
                 Center(
                   child: TextButton(
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () => context.go('/onboarding'),
                     child: const Text(
                       'Back to Registration Type',
                       style: TextStyle(
-                        color: Colors.black,
+                        color: Colors.white,
                         fontSize: 16,
                       ),
                     ),
