@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../features/auth/presentation/sign_in_screen.dart';
 import '../features/feed/presentation/feed_screen.dart';
 import '../features/profile/presentation/profile_screen.dart';
 
@@ -11,9 +12,14 @@ part 'app_router.g.dart';
 @riverpod
 GoRouter appRouter(Ref ref) {
   return GoRouter(
-    initialLocation: '/',
+    initialLocation: '/sign-in',
     debugLogDiagnostics: true,
     routes: [
+      GoRoute(
+        path: '/sign-in',
+        name: 'sign-in',
+        builder: (context, state) => const SignInScreen(),
+      ),
       GoRoute(
         path: '/',
         name: 'feed',
@@ -28,14 +34,15 @@ GoRouter appRouter(Ref ref) {
         },
       ),
     ],
-    errorBuilder: (context, state) => Scaffold(
-      body: Center(
-        child: Text(
-          'Page not found',
-          style: Theme.of(context).textTheme.headlineMedium,
-          semanticsLabel: 'Error: Page not found',
+    errorBuilder:
+        (context, state) => Scaffold(
+          body: Center(
+            child: Text(
+              'Page not found',
+              style: Theme.of(context).textTheme.headlineMedium,
+              semanticsLabel: 'Error: Page not found',
+            ),
+          ),
         ),
-      ),
-    ),
   );
 }
