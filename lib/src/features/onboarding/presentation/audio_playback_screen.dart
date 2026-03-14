@@ -139,7 +139,7 @@ class _AudioPlaybackScreenState extends ConsumerState<AudioPlaybackScreen> {
         foregroundColor: Colors.white,
         actions: [
           AccessibleTappable(
-            semanticsLabel: 'Submit registration',
+            semanticLabel: 'Submit registration',
             onTap: _finalSubmit,
             child: const Padding(
               padding: EdgeInsets.all(12.0),
@@ -257,7 +257,7 @@ class _AudioPlaybackScreenState extends ConsumerState<AudioPlaybackScreen> {
                               children: [
                                 // Play/Pause Button
                                 AccessibleTappable(
-                                  semanticsLabel: isCurrentlyPlaying 
+                                  semanticLabel: isCurrentlyPlaying 
                                       ? 'Pause $fieldName recording' 
                                       : 'Play $fieldName recording',
                                   onTap: () => _playAudio(fieldName, audioFile),
