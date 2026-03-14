@@ -31,13 +31,55 @@ class _SimpleManualRegistrationScreenState extends ConsumerState<SimpleManualReg
     super.dispose();
   }
 
+  /// Validates phone number according to E.164 international standard
+  /// Accepts formats: +1234567890, 1234567890, (123) 456-7890, 123-456-7890, etc.
+  /// Minimum 10 digits, maximum 15 digits (E.164 standard)
+  String? _validatePhoneNumber(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter your phone number';
+    }
+
+    // Remove all non-digit characters except leading +
+    final cleanedNumber = value.replaceAll(RegExp(r'[^\d+]'), '');
+
+    // Check if it starts with + (international format)
+    final hasCountryCode = cleanedNumber.startsWith('+');
+
+    // Get only digits for length validation
+    final digitsOnly = cleanedNumber.replaceAll('+', '');
+
+    // E.164 standard: minimum 10 digits (for most countries), maximum 15 digits
+    if (digitsOnly.length < 10) {
+      return 'Phone number must have at least 10 digits';
+    }
+
+    if (digitsOnly.length > 15) {
+      return 'Phone number cannot exceed 15 digits';
+    }
+
+    // Check for valid characters (only digits allowed after cleaning)
+    if (!RegExp(r'^\d+$').hasMatch(digitsOnly)) {
+      return 'Phone number can only contain digits';
+    }
+
+    // Optional: Validate country code format if present
+    if (hasCountryCode && digitsOnly.length < 11) {
+      return 'International numbers must include country code + 10 digits';
+    }
+
+    return null; // Valid
+  }
+
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
+      // Normalize phone number to E.164 format for storage
+      final normalizedPhone = _phoneController.text.replaceAll(RegExp(r'[^\d+]'), '');
+
       // Update onboarding state with registration data
       final registrationData = {
-        'fullName': _nameController.text,
-        'email': _emailController.text,
-        'phone': _phoneController.text,
+        'fullName': _nameController.text.trim(),
+        'email': _emailController.text.trim().toLowerCase(),
+        'phone': normalizedPhone,
         'password': _passwordController.text,
         'registrationType': 'manual',
       };
@@ -64,7 +106,7 @@ class _SimpleManualRegistrationScreenState extends ConsumerState<SimpleManualReg
         title: const Text('Manual Registration'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go('/onboarding'),
+          onPressed: () => Navigator.pop(context),
           tooltip: 'Go back to registration type selection',
         ),
       ),
@@ -131,12 +173,24 @@ class _SimpleManualRegistrationScreenState extends ConsumerState<SimpleManualReg
                       borderRadius: BorderRadius.circular(12),
                       borderSide: const BorderSide(color: Colors.white, width: 3),
                     ),
+                    errorBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.white, width: 2),
+                    ),
+                    focusedErrorBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.white, width: 3),
+                    ),
+                    errorStyle: const TextStyle(color: Colors.white70),
                     filled: true,
                     fillColor: Colors.black,
                   ),
                   validator: (value) {
-                    if (value == null || value.isEmpty) {
+                    if (value == null || value.trim().isEmpty) {
                       return 'Please enter your full name';
+                    }
+                    if (value.trim().length < 2) {
+                      return 'Name must be at least 2 characters';
                     }
                     return null;
                   },
@@ -165,15 +219,28 @@ class _SimpleManualRegistrationScreenState extends ConsumerState<SimpleManualReg
                       borderRadius: BorderRadius.circular(12),
                       borderSide: const BorderSide(color: Colors.white, width: 3),
                     ),
+                    errorBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.white, width: 2),
+                    ),
+                    focusedErrorBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.white, width: 3),
+                    ),
+                    errorStyle: const TextStyle(color: Colors.white70),
                     filled: true,
                     fillColor: Colors.black,
                   ),
                   validator: (value) {
-                    if (value == null || value.isEmpty) {
+                    if (value == null || value.trim().isEmpty) {
                       return 'Please enter your email';
                     }
-                    if (!value.contains('@')) {
-                      return 'Please enter a valid email';
+                    // RFC 5322 compliant email regex (simplified)
+                    final emailRegex = RegExp(
+                      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+                    );
+                    if (!emailRegex.hasMatch(value.trim())) {
+                      return 'Please enter a valid email address';
                     }
                     return null;
                   },
@@ -188,6 +255,8 @@ class _SimpleManualRegistrationScreenState extends ConsumerState<SimpleManualReg
                   style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
                     labelText: 'Phone Number',
+                    hintText: '+1 (555) 123-4567',
+                    hintStyle: const TextStyle(color: Colors.white38),
                     labelStyle: const TextStyle(color: Colors.white70),
                     prefixIcon: const Icon(Icons.phone, color: Colors.white),
                     border: OutlineInputBorder(
@@ -202,15 +271,19 @@ class _SimpleManualRegistrationScreenState extends ConsumerState<SimpleManualReg
                       borderRadius: BorderRadius.circular(12),
                       borderSide: const BorderSide(color: Colors.white, width: 3),
                     ),
+                    errorBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.white, width: 2),
+                    ),
+                    focusedErrorBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.white, width: 3),
+                    ),
+                    errorStyle: const TextStyle(color: Colors.white70),
                     filled: true,
                     fillColor: Colors.black,
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your phone number';
-                    }
-                    return null;
-                  },
+                  validator: _validatePhoneNumber,
                   textInputAction: TextInputAction.next,
                 ),
                 const SizedBox(height: 16),
@@ -249,6 +322,15 @@ class _SimpleManualRegistrationScreenState extends ConsumerState<SimpleManualReg
                       borderRadius: BorderRadius.circular(12),
                       borderSide: const BorderSide(color: Colors.white, width: 3),
                     ),
+                    errorBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.white, width: 2),
+                    ),
+                    focusedErrorBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.white, width: 3),
+                    ),
+                    errorStyle: const TextStyle(color: Colors.white70),
                     filled: true,
                     fillColor: Colors.black,
                   ),
@@ -256,8 +338,17 @@ class _SimpleManualRegistrationScreenState extends ConsumerState<SimpleManualReg
                     if (value == null || value.isEmpty) {
                       return 'Please enter a password';
                     }
-                    if (value.length < 6) {
-                      return 'Password must be at least 6 characters';
+                    if (value.length < 8) {
+                      return 'Password must be at least 8 characters';
+                    }
+                    if (!RegExp(r'[A-Z]').hasMatch(value)) {
+                      return 'Password must contain at least one uppercase letter';
+                    }
+                    if (!RegExp(r'[a-z]').hasMatch(value)) {
+                      return 'Password must contain at least one lowercase letter';
+                    }
+                    if (!RegExp(r'[0-9]').hasMatch(value)) {
+                      return 'Password must contain at least one number';
                     }
                     return null;
                   },
@@ -299,6 +390,15 @@ class _SimpleManualRegistrationScreenState extends ConsumerState<SimpleManualReg
                       borderRadius: BorderRadius.circular(12),
                       borderSide: const BorderSide(color: Colors.white, width: 3),
                     ),
+                    errorBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.white, width: 2),
+                    ),
+                    focusedErrorBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.white, width: 3),
+                    ),
+                    errorStyle: const TextStyle(color: Colors.white70),
                     filled: true,
                     fillColor: Colors.black,
                   ),
@@ -339,21 +439,7 @@ class _SimpleManualRegistrationScreenState extends ConsumerState<SimpleManualReg
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
-                
-                // Back to selection
-                Center(
-                  child: TextButton(
-                    onPressed: () => context.go('/onboarding'),
-                    child: const Text(
-                      'Back to Registration Type',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ),
-                ),
+                const SizedBox(height: 24),
               ],
             ),
           ),

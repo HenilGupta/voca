@@ -205,6 +205,28 @@ The app uses a clean repository pattern for data fetching:
 
 ## Development Log
 
+### 2026-03-14: Manual Registration Screen Improvements
+**Issues Fixed:**
+1. **Back Button Navigation** — Changed `context.go('/onboarding')` to `Navigator.pop(context)` so the header back button properly returns to the registration type selection screen
+2. **Removed Redundant Button** — Removed the "Back to Registration Type" TextButton below the Register button
+3. **Phone Number Validation** — Implemented E.164 international standard validation:
+   - Accepts multiple formats: `+1234567890`, `(123) 456-7890`, `123-456-7890`
+   - Minimum 10 digits, maximum 15 digits per ITU-T E.164
+   - International format validation when `+` prefix is present
+   - Normalizes phone numbers for API storage
+4. **Password Validation** — Enhanced to industry standards:
+   - Minimum 8 characters (up from 6)
+   - Requires at least one uppercase letter
+   - Requires at least one lowercase letter
+   - Requires at least one number
+5. **Email Validation** — Added RFC 5322 compliant regex validation
+6. **Error Styling** — Added proper `errorBorder` and `focusedErrorBorder` styling for B&W theme consistency
+
+**Files Modified:**
+- `simple_manual_registration_screen.dart` — All improvements above
+
+---
+
 ### 2026-03-14: Questionnaire / Personality Setup Flow
 **Feature Implemented:**
 Dynamic 18-question personality questionnaire inserted between onboarding and the main feed.
