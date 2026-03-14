@@ -31,9 +31,7 @@ class _SignInScreenState extends State<SignInScreen> {
   }
 
   void _handleSignUp() {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Sign Up flow coming soon')));
+    context.go('/onboarding');
   }
 
   @override
