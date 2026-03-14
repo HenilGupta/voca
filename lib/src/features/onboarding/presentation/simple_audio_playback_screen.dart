@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../application/onboarding_provider.dart';
 
 class SimpleAudioPlaybackScreen extends ConsumerStatefulWidget {
@@ -90,18 +91,31 @@ class _SimpleAudioPlaybackScreenState extends ConsumerState<SimpleAudioPlaybackS
     
     showDialog(
       context: context,
-      builder: (BuildContext context) {
+      builder: (BuildContext dialogContext) {
         return AlertDialog(
-          title: const Text('Registration Complete'),
-          content: const Text('Your voice registration has been submitted successfully!'),
+          backgroundColor: Colors.black,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: const BorderSide(color: Colors.white, width: 2),
+          ),
+          title: const Text(
+            'Registration Complete',
+            style: TextStyle(color: Colors.white),
+          ),
+          content: const Text(
+            'Your voice registration has been submitted successfully!',
+            style: TextStyle(color: Colors.white70),
+          ),
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Close dialog
-                Navigator.of(context).pop(); // Go back to AI voice screen
-                Navigator.of(context).pop(); // Go back to selection screen
+                Navigator.of(dialogContext).pop(); // Close dialog
+                context.go('/'); // Navigate to feed using GoRouter
               },
-              child: const Text('OK'),
+              child: const Text(
+                'OK',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         );
@@ -114,273 +128,288 @@ class _SimpleAudioPlaybackScreenState extends ConsumerState<SimpleAudioPlaybackS
     return Scaffold(
       appBar: AppBar(
         title: const Text('Audio Recordings'),
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+          tooltip: 'Go back to recording',
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.check),
             onPressed: _finalSubmit,
+            tooltip: 'Submit registration',
           ),
         ],
       ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              const Text(
-                'Review Your Recordings',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
+        child: Container(
+          color: Colors.black,
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                const Text(
+                  'Review Your Recordings',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Play each recording to review your answers',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey[600],
+                const SizedBox(height: 8),
+                const Text(
+                  'Play each recording to review your answers',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.white70,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 24),
-              
-              // Audio Files List
-              Expanded(
-                child: ListView.builder(
-                  itemCount: widget.registrationFields.length,
-                  itemBuilder: (context, index) {
-                    final fieldName = widget.registrationFields[index];
-                    final audioFile = widget.audioFiles[fieldName] ?? '';
-                    final duration = index < widget.recordingDurations.length 
-                        ? widget.recordingDurations[index] 
-                        : const Duration(seconds: 5);
-                    final isCurrentlyPlaying = _currentlyPlayingFile == audioFile && _isPlaying;
-                    final totalSeconds = duration.inSeconds.toDouble();
+                const SizedBox(height: 24),
 
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      elevation: 2,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        side: BorderSide(color: Colors.grey[300]!),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Question Title
-                            Row(
-                              children: [
-                                Container(
-                                  width: 32,
-                                  height: 32,
-                                  decoration: BoxDecoration(
-                                    color: isCurrentlyPlaying ? Colors.green[600] : Colors.black,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Center(
-                                    child: Text(
-                                      '${index + 1}',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        fieldName,
-                                        style: const TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.black,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        'Duration: ${_formatDuration(duration)}',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          color: Colors.grey[600],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-                            
-                            // Audio Controls
-                            Row(
-                              children: [
-                                // Play/Pause Button
-                                GestureDetector(
-                                  onTap: () => _playAudio(fieldName, audioFile),
-                                  child: Container(
-                                    width: 48,
-                                    height: 48,
+                // Audio Files List
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: widget.registrationFields.length,
+                    itemBuilder: (context, index) {
+                      final fieldName = widget.registrationFields[index];
+                      final audioFile = widget.audioFiles[fieldName] ?? '';
+                      final duration = index < widget.recordingDurations.length
+                          ? widget.recordingDurations[index]
+                          : const Duration(seconds: 5);
+                      final isCurrentlyPlaying = _currentlyPlayingFile == audioFile && _isPlaying;
+                      final totalSeconds = duration.inSeconds.toDouble();
+
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.black,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.white54),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Question Title
+                              Row(
+                                children: [
+                                  Container(
+                                    width: 32,
+                                    height: 32,
                                     decoration: BoxDecoration(
-                                      color: isCurrentlyPlaying ? Colors.red[600] : Colors.black,
+                                      color: isCurrentlyPlaying ? Colors.white : Colors.white,
                                       shape: BoxShape.circle,
                                     ),
-                                    child: Icon(
-                                      isCurrentlyPlaying ? Icons.pause : Icons.play_arrow,
-                                      color: Colors.white,
-                                      size: 24,
+                                    child: Center(
+                                      child: Text(
+                                        '${index + 1}',
+                                        style: const TextStyle(
+                                          color: Colors.black,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16,
+                                        ),
+                                      ),
                                     ),
                                   ),
-                                ),
-                                const SizedBox(width: 12),
-                                
-                                // Progress Bar
-                                Expanded(
-                                  child: Column(
-                                    children: [
-                                      SliderTheme(
-                                        data: SliderTheme.of(context).copyWith(
-                                          thumbShape: const RoundSliderThumbShape(
-                                            enabledThumbRadius: 6,
-                                          ),
-                                          trackHeight: 4,
-                                          activeTrackColor: Colors.black,
-                                          inactiveTrackColor: Colors.grey[300],
-                                          thumbColor: Colors.black,
-                                        ),
-                                        child: Slider(
-                                          value: _currentPlayingField == fieldName 
-                                              ? _currentPosition.clamp(0.0, totalSeconds)
-                                              : 0.0,
-                                          min: 0.0,
-                                          max: totalSeconds,
-                                          onChanged: (value) => _seekAudio(value, fieldName),
-                                        ),
-                                      ),
-                                      Padding(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                                        child: Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Text(
-                                              _formatDuration(Duration(
-                                                seconds: _currentPlayingField == fieldName 
-                                                    ? _currentPosition.toInt()
-                                                    : 0,
-                                              )),
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.grey[600],
-                                              ),
-                                            ),
-                                            Text(
-                                              _formatDuration(duration),
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.grey[600],
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            
-                            // Audio File Info
-                            const SizedBox(height: 12),
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.grey[100],
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.audiotrack,
-                                    size: 16,
-                                    color: Colors.grey[600],
-                                  ),
-                                  const SizedBox(width: 6),
+                                  const SizedBox(width: 12),
                                   Expanded(
-                                    child: Text(
-                                      audioFile,
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey[600],
-                                        fontFamily: 'monospace',
-                                      ),
-                                      overflow: TextOverflow.ellipsis,
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          fieldName,
+                                          style: const TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          'Duration: ${_formatDuration(duration)}',
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.white70,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ],
                               ),
-                            ),
-                          ],
+                              const SizedBox(height: 16),
+
+                              // Audio Controls
+                              Row(
+                                children: [
+                                  // Play/Pause Button
+                                  Semantics(
+                                    label: isCurrentlyPlaying
+                                        ? 'Pause $fieldName recording'
+                                        : 'Play $fieldName recording',
+                                    button: true,
+                                    child: GestureDetector(
+                                      onTap: () => _playAudio(fieldName, audioFile),
+                                      child: Container(
+                                        width: 48,
+                                        height: 48,
+                                        decoration: BoxDecoration(
+                                          color: isCurrentlyPlaying ? Colors.white70 : Colors.white,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: Icon(
+                                          isCurrentlyPlaying ? Icons.pause : Icons.play_arrow,
+                                          color: Colors.black,
+                                          size: 24,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+
+                                  // Progress Bar
+                                  Expanded(
+                                    child: Column(
+                                      children: [
+                                        SliderTheme(
+                                          data: SliderTheme.of(context).copyWith(
+                                            thumbShape: const RoundSliderThumbShape(
+                                              enabledThumbRadius: 6,
+                                            ),
+                                            trackHeight: 4,
+                                            activeTrackColor: Colors.white,
+                                            inactiveTrackColor: Colors.white24,
+                                            thumbColor: Colors.white,
+                                          ),
+                                          child: Slider(
+                                            value: _currentPlayingField == fieldName
+                                                ? _currentPosition.clamp(0.0, totalSeconds)
+                                                : 0.0,
+                                            min: 0.0,
+                                            max: totalSeconds,
+                                            onChanged: (value) => _seekAudio(value, fieldName),
+                                          ),
+                                        ),
+                                        Padding(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                                          child: Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Text(
+                                                _formatDuration(Duration(
+                                                  seconds: _currentPlayingField == fieldName
+                                                      ? _currentPosition.toInt()
+                                                      : 0,
+                                                )),
+                                                style: const TextStyle(
+                                                  fontSize: 12,
+                                                  color: Colors.white70,
+                                                ),
+                                              ),
+                                              Text(
+                                                _formatDuration(duration),
+                                                style: const TextStyle(
+                                                  fontSize: 12,
+                                                  color: Colors.white70,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+
+                              // Audio File Info
+                              const SizedBox(height: 12),
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.black,
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(color: Colors.white24),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.audiotrack,
+                                      size: 16,
+                                      color: Colors.white70,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Expanded(
+                                      child: Text(
+                                        audioFile,
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.white70,
+                                          fontFamily: 'monospace',
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
+                      );
+                    },
+                  ),
+                ),
+
+                // Submit Button
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton.icon(
+                    onPressed: _finalSubmit,
+                    icon: const Icon(Icons.cloud_upload, size: 20),
+                    label: const Text(
+                      'Submit Registration',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
                       ),
-                    );
-                  },
-                ),
-              ),
-              
-              // Submit Button
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton.icon(
-                  onPressed: _finalSubmit,
-                  icon: const Icon(Icons.cloud_upload, size: 20),
-                  label: const Text(
-                    'Submit Registration',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
                     ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green[700],
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    elevation: 2,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              
-              // Back Button
-              Center(
-                child: TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text(
-                    'Back to Recording',
-                    style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 14,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: Colors.black,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      elevation: 0,
                     ),
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 8),
+
+                // Back Button
+                Center(
+                  child: TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text(
+                      'Back to Recording',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 }
+

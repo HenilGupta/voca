@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../application/onboarding_provider.dart';
 import 'simple_manual_registration_screen.dart';
 import 'simple_ai_voice_registration_screen.dart';
@@ -15,30 +16,22 @@ class SimpleSelectRegistrationTypeScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Registration Type'),
         centerTitle: true,
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
       ),
       body: Container(
         width: double.infinity,
         padding: const EdgeInsets.all(24.0),
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFF5F5F5),
-              Colors.white,
-            ],
-          ),
-        ),
+        color: Colors.black,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             // Header section
-            const Icon(
-              Icons.app_registration,
-              size: 80,
-              color: Colors.black,
+            Semantics(
+              label: 'Registration icon',
+              child: const Icon(
+                Icons.app_registration,
+                size: 80,
+                color: Colors.white,
+              ),
             ),
             const SizedBox(height: 24),
             const Text(
@@ -46,16 +39,16 @@ class SimpleSelectRegistrationTypeScreen extends ConsumerWidget {
               style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
-                color: Colors.black,
+                color: Colors.white,
               ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            Text(
+            const Text(
               'Select how you would like to register',
               style: TextStyle(
                 fontSize: 16,
-                color: Colors.grey[600],
+                color: Colors.white70,
               ),
               textAlign: TextAlign.center,
             ),
@@ -80,17 +73,16 @@ class SimpleSelectRegistrationTypeScreen extends ConsumerWidget {
                   'Manual Registration',
                   style: TextStyle(
                     fontSize: 18,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
-                  foregroundColor: Colors.white,
+                  backgroundColor: Colors.white,
+                  foregroundColor: Colors.black,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
-                    side: const BorderSide(color: Colors.black, width: 2),
                   ),
-                  elevation: 3,
+                  elevation: 0,
                 ),
               ),
             ),
@@ -100,7 +92,7 @@ class SimpleSelectRegistrationTypeScreen extends ConsumerWidget {
             SizedBox(
               width: double.infinity,
               height: 60,
-              child: ElevatedButton.icon(
+              child: OutlinedButton.icon(
                 onPressed: () {
                   onboardingNotifier.selectAiVoiceRegistration();
                   Navigator.push(
@@ -115,28 +107,26 @@ class SimpleSelectRegistrationTypeScreen extends ConsumerWidget {
                   'AI Voice Registration',
                   style: TextStyle(
                     fontSize: 18,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: Colors.black,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  side: const BorderSide(color: Colors.white, width: 2),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
-                    side: const BorderSide(color: Colors.black, width: 2),
                   ),
-                  elevation: 3,
                 ),
               ),
             ),
             const SizedBox(height: 40),
             
             // Footer text
-            Text(
+            const Text(
               'Choose the method that works best for you',
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.grey[500],
+                color: Colors.white54,
                 fontStyle: FontStyle.italic,
               ),
               textAlign: TextAlign.center,
