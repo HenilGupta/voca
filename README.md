@@ -11,9 +11,11 @@ A Flutter dating app built with a strict **Black & White monochrome theme** targ
 | State Management | `flutter_riverpod` + `riverpod_annotation` (code-gen) |
 | Navigation | `go_router` (declarative, typed routes) |
 | HTTP Networking | `dio` (with custom logging interceptors) |
+| Secure Token Storage | `flutter_secure_storage` (Keychain / EncryptedSharedPreferences) |
 | Accessibility audit | `accessibility_tools` |
 | Haptics | `flutter_haptic` |
 | Fonts | `google_fonts` (Inter) |
+| Local persistence | `shared_preferences` |
 
 ---
 
@@ -36,8 +38,10 @@ lib/
     │       └── accessible_card.dart      # MergeSemantics card — screen reader reads as one announcement
     ├── features/
     │   ├── auth/
+    │   │   ├── application/
+    │   │   │   └── auth_api_service.dart      # AuthApiService — signup, login, logout, logoutAll
     │   │   └── presentation/
-    │   │       └── sign_in_screen.dart       # Simple sign-in form (email + password) with bottom Sign Up action
+    │   │       └── sign_in_screen.dart         # Sign-in form wired to login API + bottom Sign Up action
     │   ├── onboarding/
     │   │   ├── domain/
     │   │   │   └── onboarding_state.dart      # OnboardingState model with steps and completion status
@@ -66,8 +70,10 @@ lib/
     │   │           └── emoji_choice_widget.dart      # Emoji-based single choice
     └── services/
         ├── network/
-        │   └── api_client.dart        # Dio HTTP client with logging interceptor
-        └── haptics_service.dart       # Centralised haptic patterns (light, medium, heavy, warning)
+        │   ├── api_client.dart            # Dio HTTP client, endpoint constants, logging interceptor
+        │   ├── api_exception.dart         # ApiException — typed error with statusCode, message, fieldErrors
+        │   └── token_storage_service.dart # TokenStorageService — secure token persistence (Keychain / EncryptedSharedPrefs)
+        └── haptics_service.dart           # Centralised haptic patterns (light, medium, heavy, warning)
 ```
 
 ---
@@ -153,6 +159,54 @@ flutter analyze
 
 ## API Integration & Logging
 
+### API Service Layer
+
+The app uses a centralized **service layer** that encapsulates all API calls behind typed Dart classes with Riverpod providers. Screens never interact with Dio directly.
+
+| Service | Provider | Endpoints |
+|---|---|---|
+| `AuthApiService` | `authApiServiceProvider` | `POST /auth/signup`, `POST /auth/login`, `POST /auth/logout`, `POST /auth/logout-all` |
+| `UserApiService` | `userApiServiceProvider` | `GET /users/me`, `PATCH /users/me`, `PATCH /users/me/password`, `DELETE /users/me` |
+| `TokenStorageService` | `tokenStorageProvider` | Secure read/write/clear of `userToken` + `sessionToken` |
+
+#### Usage Example
+```dart
+// In a ConsumerState or ConsumerWidget:
+final authService = ref.read(authApiServiceProvider);
+
+try {
+  final data = await authService.login(email: email, password: password);
+  // Tokens are persisted automatically — navigate forward
+} on ApiException catch (e) {
+  // Structured server error (400, 401, 409, etc.)
+  showSnackbar(e.displayMessage);
+  // Per-field validation: e.fieldErrors?['email']
+} on DioException catch (e) {
+  // Network / timeout error
+  showSnackbar('Check your connection.');
+}
+```
+
+#### Error Handling — `ApiException`
+Server errors with JSON bodies are wrapped in `ApiException`:
+- `statusCode` — HTTP status (400, 401, 409…)
+- `message` — `String` or `Map<String, String>` of per-field errors
+- `displayMessage` — single human-readable string (joins field errors)
+- `fieldErrors` — nullable `Map<String, String>` for per-field highlighting
+
+### Token Storage
+Tokens are stored using **`flutter_secure_storage`** (Keychain on iOS, EncryptedSharedPreferences on Android) instead of plain `SharedPreferences`:
+- `saveTokens()` / `getUserToken()` / `getSessionToken()` / `hasSession()` / `clearAll()`
+- Auth services call `saveTokens` automatically after signup/login
+- Logout calls `clearAll` automatically
+
+### HTTP Client
+`apiClientProvider` configures Dio with:
+- Custom `LoggingInterceptor` for all requests/responses/errors
+- Base URL: `https://ckn4m91r-3000.inc1.devtunnels.ms`
+- 15-second timeouts (connect, receive, send)
+- JSON content-type headers
+
 ### Chunked Logging
 `AppLogger` utility automatically chunks log messages over 800 characters to avoid Flutter's console truncation:
 
@@ -169,11 +223,14 @@ The app uses a clean repository pattern for data fetching:
 - **`HttpFeedRepository`** - Production API implementation
 - **`MockFeedRepository`** - Fallback/development data source
 
-### HTTP Client
-`apiClient` provider configures Dio with:
-- Custom logging interceptor for all requests/responses
-- Automatic fallback to mock data on network failures
-- Base URL configuration and timeout handling
+### Authentication Status
+- **Sign Up** — `AuthApiService.signup()` → `POST /auth/signup` with email, password, phoneNumber
+- **Sign In** — `AuthApiService.login()` → `POST /auth/login` with email, password
+- **Logout** — `AuthApiService.logout()` / `logoutAll()` → clears secure storage
+- Sign up navigates forward only on `201 Created`; sign in on `200 OK`
+- Tokens (`userToken`, `sessionToken`) are securely persisted via `flutter_secure_storage`
+- `ApiException` provides structured error handling (validation, duplicate-user, unauthorized)
+- All errors logged via `AppLogger` and surfaced to users via white-on-black `SnackBar`
 
 ---
 
@@ -189,12 +246,16 @@ The app uses a clean repository pattern for data fetching:
 - [x] ✅ **Accessibility Integration** — Full WCAG compliance in onboarding flow
 - [x] ✅ **Questionnaire Flow** — 18-question personality & preferences setup with dynamic widget system
 - [x] ✅ **Questionnaire Route Protection** — Users must complete questionnaire before accessing feed
-- [ ] Replace mock API base URL with production endpoint
+- [x] ✅ **Manual Sign Up API Flow** — `/auth/signup` wired with `201`-only navigation and error handling
+- [x] ✅ **Sign In API Flow** — `/auth/login` wired via `AuthApiService` with loading state and error handling
+- [x] ✅ **API Service Layer** — Centralized `AuthApiService` + `UserApiService` with `ApiException` error model
+- [x] ✅ **Secure Token Storage** — `flutter_secure_storage` replaces `SharedPreferences` for credentials
+- [x] ✅ **User Persistence** — `userToken` and `sessionToken` stored securely
+- [ ] Replace devtunnel API base URL with production endpoint
 - [ ] Connect questionnaire payload to backend API endpoint
 - [ ] Implement real audio recording and playback functionality
-- [ ] Add user persistence (SharedPreferences/Secure Storage)
 - [ ] Implement swipe gesture (Dismissible or gesture detector) on the feed card
-- [ ] Complete authentication and user management (backend/session/sign-up flow)
+- [ ] Complete remaining authentication flows (session restore, sign-out UI, profile bootstrap)
 - [ ] Add a messaging feature (`features/messaging/`)
 - [ ] Implement match detection and notification
 - [ ] Add deep-link support for "Share Profile" via `/profile/:userId`
@@ -204,6 +265,61 @@ The app uses a clean repository pattern for data fetching:
 ---
 
 ## Development Log
+
+### 2026-03-15: API Service Layer & Secure Token Storage
+**Feature Implemented:**
+Centralized all API interactions behind typed service classes with Riverpod providers. Replaced `SharedPreferences` with `flutter_secure_storage` for credential persistence. Wired sign-in screen to the login endpoint.
+
+**Architecture:**
+- **Service layer pattern** — Screens call `ref.read(authApiServiceProvider)` / `ref.read(userApiServiceProvider)` instead of using Dio directly
+- **Typed exceptions** — `ApiException` wraps server error JSON with `statusCode`, `message`, `displayMessage`, `fieldErrors`
+- **Secure storage** — `TokenStorageService` wraps `flutter_secure_storage` for Keychain/EncryptedSharedPrefs token persistence
+- **Auto-token management** — `signup()` and `login()` persist tokens automatically; `logout()` clears them
+
+**What Changed:**
+1. **`api_client.dart`** — Added all endpoint constants: `AuthApiEndpoints` (signup, login, logout, logoutAll) + `UserApiEndpoints` (me, changePassword)
+2. **`api_exception.dart`** *(new)* — `ApiException` with `displayMessage` and `fieldErrors` getters
+3. **`token_storage_service.dart`** *(new)* — Secure token CRUD with `tokenStorageProvider`
+4. **`auth_api_service.dart`** *(new)* — `AuthApiService` with `signup`, `login`, `logout`, `logoutAll` + `authApiServiceProvider`
+5. **`user_api_service.dart`** *(new)* — `UserApiService` with `getProfile`, `updateProfile`, `changePassword`, `deleteAccount` + `userApiServiceProvider`
+6. **`manual_registration_screen.dart`** — Refactored to use `AuthApiService` instead of raw Dio + SharedPreferences
+7. **`sign_in_screen.dart`** — Converted to `ConsumerStatefulWidget`, wired `_handleSignIn` to `AuthApiService.login()`, added loading spinner, added semantic label to password toggle IconButton (fixing accessibility audit warning)
+8. **`pubspec.yaml`** — Added `flutter_secure_storage`
+
+**Files Created:**
+- `lib/src/services/network/api_exception.dart`
+- `lib/src/services/network/token_storage_service.dart`
+- `lib/src/features/auth/application/auth_api_service.dart`
+- `lib/src/features/profile/application/user_api_service.dart`
+
+**Files Modified:**
+- `lib/src/services/network/api_client.dart`
+- `lib/src/features/onboarding/presentation/manual_registration_screen.dart`
+- `lib/src/features/auth/presentation/sign_in_screen.dart`
+- `pubspec.yaml`
+
+---
+
+### 2026-03-15: Manual Sign Up API Integration
+**Feature Implemented:**
+Completed the backend-driven manual sign up flow and aligned the entry path from the sign-in screen to onboarding.
+
+**What Changed:**
+1. **Live API Base URL** — Updated `api_client.dart` to use the configured devtunnel API base URL instead of the placeholder host
+2. **Sign Up Endpoint Integration** — Connected manual registration to `POST /auth/signup` with payload fields `email`, `password`, and `phoneNumber`
+3. **Strict Success Gating** — Navigation now happens only after a `201 Created` response from the backend
+4. **Token Persistence** — Stored `userToken` and `sessionToken` in `SharedPreferences` after successful registration
+5. **Error Handling** — Added error logging plus `SnackBar` feedback for validation, duplicate-user, throttling, and unexpected API failures
+6. **Entry Flow Fix** — Updated the Sign Up button on the sign-in screen to open onboarding and routed the active onboarding manual path to `manual_registration_screen.dart`
+
+**Files Modified:**
+- `lib/src/services/network/api_client.dart` — Added devtunnel base URL and auth endpoint constant
+- `lib/src/features/onboarding/presentation/manual_registration_screen.dart` — Implemented backend sign up, token storage, and `201`-gated navigation
+- `lib/src/features/auth/presentation/sign_in_screen.dart` — Sign Up CTA now opens onboarding
+- `lib/src/features/onboarding/presentation/simple_select_registration_type_screen.dart` — Manual option now opens the API-enabled registration screen
+- `pubspec.yaml` — Added `shared_preferences`
+
+---
 
 ### 2026-03-14: Manual Registration Screen Improvements
 **Issues Fixed:**
