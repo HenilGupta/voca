@@ -7,6 +7,8 @@ import '../features/feed/presentation/feed_screen.dart';
 import '../features/profile/presentation/profile_screen.dart';
 import '../features/onboarding/presentation/simple_select_registration_type_screen.dart';
 import '../features/onboarding/application/onboarding_provider.dart';
+import '../features/questionnaire/presentation/questionnaire_screen.dart';
+import '../features/questionnaire/application/questionnaire_provider.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -15,14 +17,30 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) {
       final onboardingState = ref.read(onboardingNotifierProvider);
       final isOnboardingCompleted = onboardingState.isCompleted;
+      final questionnaireState = ref.read(questionnaireNotifierProvider);
+      final isQuestionnaireCompleted = questionnaireState.isCompleted;
+      final currentPath = state.fullPath!;
 
       // If user hasn't completed onboarding and isn't already on onboarding route
-      if (!isOnboardingCompleted && !state.fullPath!.startsWith('/onboarding')) {
+      if (!isOnboardingCompleted && !currentPath.startsWith('/onboarding') && currentPath != '/sign-in') {
         return '/onboarding';
       }
 
-      // If user completed onboarding but is on onboarding route, redirect to feed
-      if (isOnboardingCompleted && state.fullPath!.startsWith('/onboarding')) {
+      // If onboarding is done but questionnaire is not, redirect to questionnaire
+      if (isOnboardingCompleted &&
+          !isQuestionnaireCompleted &&
+          currentPath != '/questionnaire' &&
+          currentPath != '/sign-in') {
+        return '/questionnaire';
+      }
+
+      // If user completed onboarding but is on onboarding route, redirect to questionnaire
+      if (isOnboardingCompleted && currentPath.startsWith('/onboarding')) {
+        return isQuestionnaireCompleted ? '/' : '/questionnaire';
+      }
+
+      // If questionnaire completed and user is on questionnaire route, redirect to feed
+      if (isQuestionnaireCompleted && currentPath == '/questionnaire') {
         return '/';
       }
 
@@ -38,6 +56,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/onboarding',
         name: 'onboarding',
         builder: (context, state) => const SimpleSelectRegistrationTypeScreen(),
+      ),
+      GoRoute(
+        path: '/questionnaire',
+        name: 'questionnaire',
+        builder: (context, state) => const QuestionnaireScreen(),
       ),
       GoRoute(
         path: '/',

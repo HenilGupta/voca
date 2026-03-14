@@ -24,9 +24,7 @@ lib/
 ├── main.dart                          # Entry point — ProviderScope + MaterialApp.router + AccessibilityTools
 └── src/
     ├── routing/
-    │   └── app_router.dart            # GoRouter — /sign-in (SignInScreen), / (FeedScreen), /profile/:userId (ProfileScreen)
-    │   └── app_router.dart            # GoRouter with onboarding protection and routing
-    │   └── app_router.dart            # GoRouter — /sign-in (SignInScreen), / (FeedScreen), /profile/:userId (ProfileScreen)
+    │   └── app_router.dart            # GoRouter with onboarding + questionnaire protection
     ├── shared/
     │   ├── theme/
     │   │   └── app_theme.dart         # Strict B&W ColorScheme.dark, bold 3px focus borders (keyboard nav)
@@ -40,7 +38,7 @@ lib/
     │   ├── auth/
     │   │   └── presentation/
     │   │       └── sign_in_screen.dart       # Simple sign-in form (email + password) with bottom Sign Up action
-    │   ├── onboarding/                    # ✨ NEW — User registration onboarding flow
+    │   ├── onboarding/
     │   │   ├── domain/
     │   │   │   └── onboarding_state.dart      # OnboardingState model with steps and completion status
     │   │   ├── application/
@@ -50,26 +48,22 @@ lib/
     │   │       ├── simple_manual_registration_screen.dart       # Traditional form registration
     │   │       ├── simple_ai_voice_registration_screen.dart     # Voice-powered registration
     │   │       └── simple_audio_playback_screen.dart            # Review voice recordings
-    │   ├── auth/
-    │   │   └── presentation/
-    │   │       └── sign_in_screen.dart       # Simple sign-in form (email + password) with bottom Sign Up action
-    │   ├── feed/
+    │   ├── questionnaire/                  # ✨ Personality & preferences questionnaire
     │   │   ├── domain/
-    │   │   │   ├── feed_profile.dart          # Legacy FeedProfile model (DEPRECATED)
-    │   │   │   └── profile_model.dart         # New Profile model with fromJson/toJson
-    │   │   ├── data/
-    │   │   │   └── feed_repository.dart       # Repository pattern — Abstract + HTTP + Mock implementations
+    │   │   │   ├── question_model.dart        # QuestionModel + QuestionType enum (API-ready)
+    │   │   │   ├── questionnaire_state.dart   # QuestionnaireState with answers, progress, payload builder
+    │   │   │   └── questionnaire_questions.dart # Default question definitions (18 questions)
     │   │   ├── application/
-    │   │   │   └── feed_provider.dart         # @riverpod FeedNotifier with API integration + error handling
+    │   │   │   └── questionnaire_provider.dart # StateNotifierProvider for questionnaire flow
     │   │   └── presentation/
-    │   │       └── feed_screen.dart           # Card-style feed UI with Like / Pass actions
-    │   └── profile/
-    │       ├── domain/
-    │       │   └── user_profile.dart          # UserProfile model with interests list
-    │       ├── application/
-    │       │   └── profile_provider.dart      # Async @riverpod provider — fetch by userId
-    │       └── presentation/
-    │           └── profile_screen.dart        # Full profile view with interests chips
+    │   │       ├── questionnaire_screen.dart   # Step-by-step questionnaire UI
+    │   │       └── widgets/
+    │   │           ├── question_widget_factory.dart  # Dynamic widget mapper
+    │   │           ├── text_question_widget.dart     # Text / number input
+    │   │           ├── single_choice_widget.dart     # Radio-style single selection
+    │   │           ├── multi_choice_widget.dart      # Chip-style multi / pickN selection
+    │   │           ├── slider_question_widget.dart   # Continuous slider + discrete scale
+    │   │           └── emoji_choice_widget.dart      # Emoji-based single choice
     └── services/
         ├── network/
         │   └── api_client.dart        # Dio HTTP client with logging interceptor
@@ -100,21 +94,26 @@ lib/
 
 ## Navigation
 
-Routes are declared in `app_router.dart` using a `@riverpod` GoRouter with onboarding protection:
+Routes are declared in `app_router.dart` using a `@riverpod` GoRouter with onboarding + questionnaire protection:
 
-| Route | Name | Screen |
-|---|---|---|
-| `/sign-in` | `sign-in` | `SignInScreen` |
-| `/` | `feed` | `FeedScreen` |
-| `/profile/:userId` | `profile` | `ProfileScreen` |
 | Route | Name | Screen | Protected |
 |---|---|---|---|
+| `/sign-in` | `sign-in` | `SignInScreen` | No |
 | `/onboarding` | `onboarding` | `SimpleSelectRegistrationTypeScreen` | No |
-| `/` | `feed` | `FeedScreen` | Yes (requires onboarding) |
-| `/profile/:userId` | `profile` | `ProfileScreen` | Yes (requires onboarding) |
+| `/questionnaire` | `questionnaire` | `QuestionnaireScreen` | Yes (requires onboarding) |
+| `/` | `feed` | `FeedScreen` | Yes (requires onboarding + questionnaire) |
+| `/profile/:userId` | `profile` | `ProfileScreen` | Yes (requires onboarding + questionnaire) |
 
-### Onboarding Flow Protection
-The router automatically redirects users to `/onboarding` if they haven't completed registration. Once onboarding is complete, users are redirected to the main app.
+### User Flow Protection
+The router enforces this progression:
+
+```
+Sign In → Onboarding → Questionnaire → Feed
+```
+
+- Users who haven't completed onboarding are redirected to `/onboarding`
+- Users who completed onboarding but not the questionnaire are redirected to `/questionnaire`
+- Users who completed both are allowed into the main app
 
 Deep-link to a profile:
 ```dart
@@ -188,8 +187,10 @@ The app uses a clean repository pattern for data fetching:
 - [x] ✅ **Route Protection** — Automatic redirect to onboarding for new users
 - [x] ✅ **Voice Registration** — Simulated AI voice capture and audio playback
 - [x] ✅ **Accessibility Integration** — Full WCAG compliance in onboarding flow
-- [x] ✅ **Authentication Entry UI** — Sign In screen with bottom Sign Up action
+- [x] ✅ **Questionnaire Flow** — 18-question personality & preferences setup with dynamic widget system
+- [x] ✅ **Questionnaire Route Protection** — Users must complete questionnaire before accessing feed
 - [ ] Replace mock API base URL with production endpoint
+- [ ] Connect questionnaire payload to backend API endpoint
 - [ ] Implement real audio recording and playback functionality
 - [ ] Add user persistence (SharedPreferences/Secure Storage)
 - [ ] Implement swipe gesture (Dismissible or gesture detector) on the feed card
@@ -203,6 +204,32 @@ The app uses a clean repository pattern for data fetching:
 ---
 
 ## Development Log
+
+### 2026-03-14: Questionnaire / Personality Setup Flow
+**Feature Implemented:**
+Dynamic 18-question personality questionnaire inserted between onboarding and the main feed.
+
+**Architecture:**
+- **Domain**: `QuestionModel` with `QuestionType` enum (text, number, singleChoice, multiChoice, pickN, slider, scale, emojiChoice)
+- **Application**: `QuestionnaireNotifier` StateNotifier with answer tracking, step navigation, validation, and API payload builder
+- **Presentation**: `QuestionnaireScreen` with `QuestionWidgetFactory` dispatching to 5 specialized widgets
+- **Navigation**: `/questionnaire` route with redirect protection (onboarding → questionnaire → feed)
+
+**Files Created:**
+- `features/questionnaire/domain/question_model.dart` — QuestionModel + QuestionType enum
+- `features/questionnaire/domain/questionnaire_state.dart` — Immutable state with payload builder
+- `features/questionnaire/domain/questionnaire_questions.dart` — 18 default questions
+- `features/questionnaire/application/questionnaire_provider.dart` — StateNotifier provider
+- `features/questionnaire/presentation/questionnaire_screen.dart` — Step-by-step UI
+- `features/questionnaire/presentation/widgets/question_widget_factory.dart` — Dynamic widget mapper
+- `features/questionnaire/presentation/widgets/text_question_widget.dart` — Text/number input
+- `features/questionnaire/presentation/widgets/single_choice_widget.dart` — Radio-style selection
+- `features/questionnaire/presentation/widgets/multi_choice_widget.dart` — Multi/pickN chip selection
+- `features/questionnaire/presentation/widgets/slider_question_widget.dart` — Slider + scale
+- `features/questionnaire/presentation/widgets/emoji_choice_widget.dart` — Emoji choice cards
+
+**Files Modified:**
+- `routing/app_router.dart` — Added `/questionnaire` route + updated redirect logic
 
 ### 2024-03-14: Accessibility & Theme Consistency Fixes
 **Issues Fixed:**
