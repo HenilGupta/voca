@@ -24,7 +24,7 @@ lib/
 ├── main.dart                          # Entry point — ProviderScope + MaterialApp.router + AccessibilityTools
 └── src/
     ├── routing/
-    │   └── app_router.dart            # GoRouter — / (FeedScreen) and /profile/:userId (ProfileScreen)
+    │   └── app_router.dart            # GoRouter — /sign-in (SignInScreen), / (FeedScreen), /profile/:userId (ProfileScreen)
     ├── shared/
     │   ├── theme/
     │   │   └── app_theme.dart         # Strict B&W ColorScheme.dark, bold 3px focus borders (keyboard nav)
@@ -35,6 +35,9 @@ lib/
     │       ├── accessible_button.dart    # Elevated/Outlined button with haptics + semantic label
     │       └── accessible_card.dart      # MergeSemantics card — screen reader reads as one announcement
     ├── features/
+    │   ├── auth/
+    │   │   └── presentation/
+    │   │       └── sign_in_screen.dart       # Simple sign-in form (email + password) with bottom Sign Up action
     │   ├── feed/
     │   │   ├── domain/
     │   │   │   ├── feed_profile.dart          # Legacy FeedProfile model (DEPRECATED)
@@ -86,6 +89,7 @@ Routes are declared in `app_router.dart` using a `@riverpod` GoRouter:
 
 | Route | Name | Screen |
 |---|---|---|
+| `/sign-in` | `sign-in` | `SignInScreen` |
 | `/` | `feed` | `FeedScreen` |
 | `/profile/:userId` | `profile` | `ProfileScreen` |
 
@@ -156,9 +160,10 @@ The app uses a clean repository pattern for data fetching:
 - [x] ✅ **API Integration** — Repository pattern with Dio HTTP client
 - [x] ✅ **Chunked Logging** — Console-friendly logging utility
 - [x] ✅ **Error Handling** — Graceful fallbacks and user feedback
+- [x] ✅ **Authentication Entry UI** — Sign In screen with bottom Sign Up action
 - [ ] Replace mock API base URL with production endpoint
 - [ ] Implement swipe gesture (Dismissible or gesture detector) on the feed card
-- [ ] Add authentication and user management
+- [ ] Complete authentication and user management (backend/session/sign-up flow)
 - [ ] Add a messaging feature (`features/messaging/`)
 - [ ] Implement match detection and notification
 - [ ] Add deep-link support for "Share Profile" via `/profile/:userId`
