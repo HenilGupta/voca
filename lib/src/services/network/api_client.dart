@@ -3,8 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../shared/utils/app_logger.dart';
 
+const String kApiBaseUrl = 'https://ckn4m91r-3000.inc1.devtunnels.ms/api#';
+
+abstract final class AuthApiEndpoints {
+  static const String signUp = '/auth/signup';
+}
+
 /// Custom logging interceptor for API requests and responses.
-/// 
+///
 /// Logs all HTTP requests, responses, and errors using the chunked AppLogger
 /// to avoid console truncation issues.̄
 class LoggingInterceptor extends Interceptor {
@@ -15,7 +21,7 @@ REQUEST: ${options.method} ${options.uri}
 Headers: ${options.headers}
 Query Parameters: ${options.queryParameters}
 Data: ${options.data}''';
-    
+
     AppLogger.logData(message);
     super.onRequest(options, handler);
   }
@@ -26,7 +32,7 @@ Data: ${options.data}''';
 RESPONSE: ${response.statusCode} ${response.requestOptions.method} ${response.requestOptions.uri}
 Headers: ${response.headers}
 Data: ${response.data}''';
-    
+
     AppLogger.logData(message);
     super.onResponse(response, handler);
   }
@@ -40,14 +46,14 @@ Error Type: ${err.type}
 Message: ${err.message}
 Response Data: ${err.response?.data}
 Stack Trace: ${err.stackTrace}''';
-    
+
     AppLogger.logError(message);
     super.onError(err, handler);
   }
 }
 
 /// Riverpod provider for the main Dio HTTP client.
-/// 
+///
 /// Provides a configured Dio instance with:
 /// - Base URL for the dating app API
 /// - Custom logging interceptor for debugging
@@ -58,14 +64,11 @@ final apiClientProvider = Provider<Dio>((ref) {
 
   // Configure base options
   dio.options = BaseOptions(
-    baseUrl: 'https://api.voca-dating.com/v1', // Replace with actual API base URL
+    baseUrl: kApiBaseUrl,
     connectTimeout: const Duration(seconds: 15),
     receiveTimeout: const Duration(seconds: 15),
     sendTimeout: const Duration(seconds: 15),
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-    },
+    headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
   );
 
   // Add logging interceptor for debugging
@@ -75,7 +78,7 @@ final apiClientProvider = Provider<Dio>((ref) {
 });
 
 /// Alternative API client provider for mock/testing environments.
-/// 
+///
 /// Can be used to override the main apiClient provider during testing
 /// or when the backend API is unavailable.
 final mockApiClientProvider = Provider<Dio>((ref) {
@@ -86,10 +89,7 @@ final mockApiClientProvider = Provider<Dio>((ref) {
     connectTimeout: const Duration(seconds: 10),
     receiveTimeout: const Duration(seconds: 10),
     sendTimeout: const Duration(seconds: 10),
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-    },
+    headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
   );
 
   // Add logging interceptor for debugging

@@ -14,24 +14,25 @@ class AccessibleButton extends StatelessWidget {
   });
 
   final String label;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final String? semanticHint;
   final IconData? icon;
   final bool outlined;
 
   @override
   Widget build(BuildContext context) {
-    final button = outlined
-        ? OutlinedButton.icon(
-            onPressed: _handlePress,
-            icon: icon != null ? Icon(icon) : const SizedBox.shrink(),
-            label: Text(label),
-          )
-        : ElevatedButton.icon(
-            onPressed: _handlePress,
-            icon: icon != null ? Icon(icon) : const SizedBox.shrink(),
-            label: Text(label),
-          );
+    final button =
+        outlined
+            ? OutlinedButton.icon(
+              onPressed: onPressed == null ? null : _handlePress,
+              icon: icon != null ? Icon(icon) : const SizedBox.shrink(),
+              label: Text(label),
+            )
+            : ElevatedButton.icon(
+              onPressed: onPressed == null ? null : _handlePress,
+              icon: icon != null ? Icon(icon) : const SizedBox.shrink(),
+              label: Text(label),
+            );
 
     return Semantics(
       label: label,
@@ -42,7 +43,10 @@ class AccessibleButton extends StatelessWidget {
   }
 
   void _handlePress() {
+    if (onPressed == null) {
+      return;
+    }
     HapticFeedback.mediumImpact();
-    onPressed();
+    onPressed!();
   }
 }

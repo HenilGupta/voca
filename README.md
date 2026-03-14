@@ -14,6 +14,7 @@ A Flutter dating app built with a strict **Black & White monochrome theme** targ
 | Accessibility audit | `accessibility_tools` |
 | Haptics | `flutter_haptic` |
 | Fonts | `google_fonts` (Inter) |
+| Local persistence | `shared_preferences` |
 
 ---
 
@@ -172,8 +173,15 @@ The app uses a clean repository pattern for data fetching:
 ### HTTP Client
 `apiClient` provider configures Dio with:
 - Custom logging interceptor for all requests/responses
-- Automatic fallback to mock data on network failures
 - Base URL configuration and timeout handling
+- Current backend base URL: `https://ckn4m91r-3000.inc1.devtunnels.ms/api`
+
+### Authentication Status
+- Manual sign up is connected to `POST /auth/signup`
+- Sign up only navigates forward when the backend responds with `201 Created`
+- `userToken` and `sessionToken` are persisted with `SharedPreferences`
+- API validation, duplicate-user, throttling, and unexpected server errors are logged and surfaced via `SnackBar`
+- Sign Up on the sign-in screen now opens the onboarding registration flow
 
 ---
 
@@ -189,12 +197,13 @@ The app uses a clean repository pattern for data fetching:
 - [x] ✅ **Accessibility Integration** — Full WCAG compliance in onboarding flow
 - [x] ✅ **Questionnaire Flow** — 18-question personality & preferences setup with dynamic widget system
 - [x] ✅ **Questionnaire Route Protection** — Users must complete questionnaire before accessing feed
-- [ ] Replace mock API base URL with production endpoint
+- [x] ✅ **Manual Sign Up API Flow** — `/auth/signup` wired with `201`-only navigation and error handling
+- [x] ✅ **User Persistence** — `userToken` and `sessionToken` stored in `SharedPreferences`
+- [ ] Replace devtunnel API base URL with production endpoint
 - [ ] Connect questionnaire payload to backend API endpoint
 - [ ] Implement real audio recording and playback functionality
-- [ ] Add user persistence (SharedPreferences/Secure Storage)
 - [ ] Implement swipe gesture (Dismissible or gesture detector) on the feed card
-- [ ] Complete authentication and user management (backend/session/sign-up flow)
+- [ ] Complete remaining authentication flows (sign-in, session restore, sign-out, profile bootstrap)
 - [ ] Add a messaging feature (`features/messaging/`)
 - [ ] Implement match detection and notification
 - [ ] Add deep-link support for "Share Profile" via `/profile/:userId`
@@ -204,6 +213,27 @@ The app uses a clean repository pattern for data fetching:
 ---
 
 ## Development Log
+
+### 2026-03-15: Manual Sign Up API Integration
+**Feature Implemented:**
+Completed the backend-driven manual sign up flow and aligned the entry path from the sign-in screen to onboarding.
+
+**What Changed:**
+1. **Live API Base URL** — Updated `api_client.dart` to use the configured devtunnel API base URL instead of the placeholder host
+2. **Sign Up Endpoint Integration** — Connected manual registration to `POST /auth/signup` with payload fields `email`, `password`, and `phoneNumber`
+3. **Strict Success Gating** — Navigation now happens only after a `201 Created` response from the backend
+4. **Token Persistence** — Stored `userToken` and `sessionToken` in `SharedPreferences` after successful registration
+5. **Error Handling** — Added error logging plus `SnackBar` feedback for validation, duplicate-user, throttling, and unexpected API failures
+6. **Entry Flow Fix** — Updated the Sign Up button on the sign-in screen to open onboarding and routed the active onboarding manual path to `manual_registration_screen.dart`
+
+**Files Modified:**
+- `lib/src/services/network/api_client.dart` — Added devtunnel base URL and auth endpoint constant
+- `lib/src/features/onboarding/presentation/manual_registration_screen.dart` — Implemented backend sign up, token storage, and `201`-gated navigation
+- `lib/src/features/auth/presentation/sign_in_screen.dart` — Sign Up CTA now opens onboarding
+- `lib/src/features/onboarding/presentation/simple_select_registration_type_screen.dart` — Manual option now opens the API-enabled registration screen
+- `pubspec.yaml` — Added `shared_preferences`
+
+---
 
 ### 2026-03-14: Manual Registration Screen Improvements
 **Issues Fixed:**
