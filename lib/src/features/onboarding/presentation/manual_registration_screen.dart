@@ -1,26 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:dio/dio.dart';
 import '../../../shared/widgets/accessible_button.dart';
 import '../../../shared/widgets/accessible_tappable.dart';
+import '../../../shared/utils/app_logger.dart';
+import '../../../services/network/api_client.dart';
 import '../application/onboarding_provider.dart';
 
 class ManualRegistrationScreen extends ConsumerStatefulWidget {
   const ManualRegistrationScreen({super.key});
 
   @override
-  ConsumerState<ManualRegistrationScreen> createState() => _ManualRegistrationScreenState();
+  ConsumerState<ManualRegistrationScreen> createState() =>
+      _ManualRegistrationScreenState();
 }
 
-class _ManualRegistrationScreenState extends ConsumerState<ManualRegistrationScreen> {
+class _ManualRegistrationScreenState
+    extends ConsumerState<ManualRegistrationScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  
+
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
+  bool _isSubmitting = false;
 
   @override
   void dispose() {
@@ -32,20 +41,109 @@ class _ManualRegistrationScreenState extends ConsumerState<ManualRegistrationScr
     super.dispose();
   }
 
-  void _submitForm() {
-    if (_formKey.currentState!.validate()) {
-      // Update onboarding state with registration data
+  String _normalizePhoneNumber(String input) {
+    final digitsOnly = input.replaceAll(RegExp(r'[^\d]'), '');
+    if (input.trim().startsWith('+')) {
+      return '+$digitsOnly';
+    }
+    return '+$digitsOnly';
+  }
+
+  String _extractErrorMessage(DioException error) {
+    final statusCode = error.response?.statusCode;
+    final responseData = error.response?.data;
+
+    if (responseData is Map<String, dynamic>) {
+      final message = responseData['message'];
+      if (message is String && message.isNotEmpty) {
+        return message;
+      }
+      if (message is Map<String, dynamic> && message.isNotEmpty) {
+        return message.values.join('\n');
+      }
+    }
+
+    switch (statusCode) {
+      case 400:
+        return 'Validation failed. Please check your email, password, and phone number.';
+      case 401:
+      case 409:
+        return 'An account with this email may already exist.';
+      case 429:
+        return 'Too many requests. Please try again in a minute.';
+      default:
+        return 'Sign up failed. Please try again.';
+    }
+  }
+
+  void _showErrorSnackbar(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.black),
+    );
+  }
+
+  Future<void> _submitForm() async {
+    if (!(_formKey.currentState?.validate() ?? false) || _isSubmitting) {
+      return;
+    }
+
+    setState(() {
+      _isSubmitting = true;
+    });
+
+    final email = _emailController.text.trim().toLowerCase();
+    final phoneNumber = _normalizePhoneNumber(_phoneController.text);
+    final password = _passwordController.text;
+
+    try {
+      final dio = ref.read(apiClientProvider);
+      final response = await dio.post(
+        AuthApiEndpoints.signUp,
+        data: {
+          'email': email,
+          'password': password,
+          'phoneNumber': phoneNumber,
+        },
+      );
+
+      final responseData = response.data;
+      if (response.statusCode != 201 || responseData is! Map<String, dynamic>) {
+        AppLogger.logError(
+          'Unexpected sign-up response: status=${response.statusCode}, data=$responseData',
+        );
+        _showErrorSnackbar('Unexpected server response. Please try again.');
+        return;
+      }
+
+      final userToken = responseData['userToken'] as String?;
+      final sessionToken = responseData['sessionToken'] as String?;
+
+      if (userToken == null || sessionToken == null) {
+        AppLogger.logError(
+          'Sign-up response missing token fields: $responseData',
+        );
+        _showErrorSnackbar('Missing authentication tokens in response.');
+        return;
+      }
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('userToken', userToken);
+      await prefs.setString('sessionToken', sessionToken);
+
       final registrationData = {
-        'fullName': _nameController.text,
-        'email': _emailController.text,
-        'phone': _phoneController.text,
-        'password': _passwordController.text,
+        'fullName': _nameController.text.trim(),
+        'email': email,
+        'phone': phoneNumber,
         'registrationType': 'manual',
       };
-      
-      ref.read(onboardingNotifierProvider.notifier).updateRegistrationData(registrationData);
+
+      ref
+          .read(onboardingNotifierProvider.notifier)
+          .updateRegistrationData(registrationData);
       ref.read(onboardingNotifierProvider.notifier).completeOnboarding();
 
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Registration completed successfully!'),
@@ -53,9 +151,21 @@ class _ManualRegistrationScreenState extends ConsumerState<ManualRegistrationScr
         ),
       );
 
-      // Navigate back to let app router handle the next navigation
-      Navigator.pop(context);
-      Navigator.pop(context);
+      context.go('/');
+    } on DioException catch (error, stackTrace) {
+      AppLogger.logError(
+        'Sign-up API error: status=${error.response?.statusCode}, data=${error.response?.data}, message=${error.message}, stack=$stackTrace',
+      );
+      _showErrorSnackbar(_extractErrorMessage(error));
+    } catch (error, stackTrace) {
+      AppLogger.logError('Unexpected sign-up error: $error\n$stackTrace');
+      _showErrorSnackbar('Something went wrong. Please try again.');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
+      }
     }
   }
 
@@ -101,17 +211,15 @@ class _ManualRegistrationScreenState extends ConsumerState<ManualRegistrationScr
                       const SizedBox(height: 8),
                       Text(
                         'Fill in your details below',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey[600],
-                        ),
-                        semanticsLabel: 'Fill in your personal details in the form below',
+                        style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                        semanticsLabel:
+                            'Fill in your personal details in the form below',
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 32),
-                
+
                 // Full Name Field
                 TextFormField(
                   controller: _nameController,
@@ -133,7 +241,7 @@ class _ManualRegistrationScreenState extends ConsumerState<ManualRegistrationScr
                   textInputAction: TextInputAction.next,
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Email Field
                 TextFormField(
                   controller: _emailController,
@@ -159,7 +267,7 @@ class _ManualRegistrationScreenState extends ConsumerState<ManualRegistrationScr
                   textInputAction: TextInputAction.next,
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Phone Field
                 TextFormField(
                   controller: _phoneController,
@@ -182,7 +290,7 @@ class _ManualRegistrationScreenState extends ConsumerState<ManualRegistrationScr
                   textInputAction: TextInputAction.next,
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Password Field
                 TextFormField(
                   controller: _passwordController,
@@ -191,16 +299,19 @@ class _ManualRegistrationScreenState extends ConsumerState<ManualRegistrationScr
                     labelText: 'Password',
                     prefixIcon: const Icon(Icons.lock),
                     suffixIcon: AccessibleTappable(
-                      semanticLabel: _isPasswordVisible
-                          ? 'Hide password'
-                          : 'Show password',
+                      semanticLabel:
+                          _isPasswordVisible
+                              ? 'Hide password'
+                              : 'Show password',
                       onTap: () {
                         setState(() {
                           _isPasswordVisible = !_isPasswordVisible;
                         });
                       },
                       child: Icon(
-                        _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                        _isPasswordVisible
+                            ? Icons.visibility
+                            : Icons.visibility_off,
                       ),
                     ),
                     border: OutlineInputBorder(
@@ -213,15 +324,27 @@ class _ManualRegistrationScreenState extends ConsumerState<ManualRegistrationScr
                     if (value == null || value.isEmpty) {
                       return 'Please enter a password';
                     }
-                    if (value.length < 6) {
-                      return 'Password must be at least 6 characters';
+                    if (value.length < 8) {
+                      return 'Password must be at least 8 characters';
+                    }
+                    if (!RegExp(r'[A-Z]').hasMatch(value)) {
+                      return 'Password must contain at least one uppercase letter';
+                    }
+                    if (!RegExp(r'[a-z]').hasMatch(value)) {
+                      return 'Password must contain at least one lowercase letter';
+                    }
+                    if (!RegExp(r'[0-9]').hasMatch(value)) {
+                      return 'Password must contain at least one number';
+                    }
+                    if (!RegExp(r'[^A-Za-z0-9]').hasMatch(value)) {
+                      return 'Password must contain at least one special character';
                     }
                     return null;
                   },
                   textInputAction: TextInputAction.next,
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Confirm Password Field
                 TextFormField(
                   controller: _confirmPasswordController,
@@ -230,16 +353,20 @@ class _ManualRegistrationScreenState extends ConsumerState<ManualRegistrationScr
                     labelText: 'Confirm Password',
                     prefixIcon: const Icon(Icons.lock_outline),
                     suffixIcon: AccessibleTappable(
-                      semanticLabel: _isConfirmPasswordVisible
-                          ? 'Hide password confirmation'
-                          : 'Show password confirmation',
+                      semanticLabel:
+                          _isConfirmPasswordVisible
+                              ? 'Hide password confirmation'
+                              : 'Show password confirmation',
                       onTap: () {
                         setState(() {
-                          _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
+                          _isConfirmPasswordVisible =
+                              !_isConfirmPasswordVisible;
                         });
                       },
                       child: Icon(
-                        _isConfirmPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                        _isConfirmPasswordVisible
+                            ? Icons.visibility
+                            : Icons.visibility_off,
                       ),
                     ),
                     border: OutlineInputBorder(
@@ -261,19 +388,24 @@ class _ManualRegistrationScreenState extends ConsumerState<ManualRegistrationScr
                   onFieldSubmitted: (_) => _submitForm(),
                 ),
                 const SizedBox(height: 32),
-                
+
                 // Submit Button
                 SizedBox(
                   width: double.infinity,
                   height: 50,
                   child: AccessibleButton(
-                    onPressed: _submitForm,
-                    label: 'Register',
+                    onPressed:
+                        _isSubmitting
+                            ? null
+                            : () {
+                              _submitForm();
+                            },
+                    label: _isSubmitting ? 'Registering...' : 'Register',
                     semanticHint: 'Complete manual registration',
                   ),
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Back to selection
                 Center(
                   child: AccessibleTappable(
@@ -283,10 +415,7 @@ class _ManualRegistrationScreenState extends ConsumerState<ManualRegistrationScr
                       padding: EdgeInsets.all(12.0),
                       child: Text(
                         'Back to Registration Type',
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontSize: 16,
-                        ),
+                        style: TextStyle(color: Colors.black, fontSize: 16),
                       ),
                     ),
                   ),
