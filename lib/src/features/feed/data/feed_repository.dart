@@ -1,11 +1,9 @@
 import 'package:dio/dio.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../services/network/api_client.dart';
 import '../../../shared/utils/app_logger.dart';
 import '../domain/profile_model.dart';
-
-part 'feed_repository.g.dart';
 
 /// Abstract repository interface for feed-related operations.
 /// 
@@ -186,17 +184,15 @@ class MockFeedRepository implements FeedRepository {
 /// 
 /// By default, uses the HTTP implementation with the main API client.
 /// Can be overridden in tests or when the backend is unavailable.
-@riverpod
-FeedRepository feedRepository(FeedRepositoryRef ref) {
+final feedRepositoryProvider = Provider<FeedRepository>((ref) {
   final dio = ref.watch(apiClientProvider);
   return HttpFeedRepository(dio);
-}
+});
 
 /// Riverpod provider for the mock FeedRepository.
 /// 
 /// Useful for development when the backend API is not available
 /// or for testing scenarios.
-@riverpod
-FeedRepository mockFeedRepository(MockFeedRepositoryRef ref) {
+final mockFeedRepositoryProvider = Provider<FeedRepository>((ref) {
   return MockFeedRepository();
-}
+});

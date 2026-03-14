@@ -1,10 +1,8 @@
-import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/utils/app_logger.dart';
 import '../data/feed_repository.dart';
 import '../domain/profile_model.dart';
-
-part 'feed_provider.g.dart';
 
 /// State class for managing the feed of profiles.
 ///
@@ -38,13 +36,16 @@ class FeedState {
 ///
 /// This is the main provider used by the UI to access feed state and operations.
 /// The notifier automatically loads profiles when first accessed.
-@riverpod
-class FeedNotifier extends _$FeedNotifier {
-  @override
-  FeedState build() {
+final feedNotifierProvider = StateNotifierProvider<FeedNotifier, FeedState>(
+  (ref) => FeedNotifier(ref),
+);
+
+class FeedNotifier extends StateNotifier<FeedState> {
+  final Ref ref;
+
+  FeedNotifier(this.ref) : super(const FeedState(isLoading: true)) {
     // Auto-load profiles when the provider is first created
     Future.microtask(() => loadProfiles());
-    return const FeedState(isLoading: true);
   }
 
   /// Loads profiles from the repository.
