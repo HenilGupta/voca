@@ -224,13 +224,13 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                         onFieldSubmitted: (_) => _submit(),
                       ),
                       const SizedBox(height: 12),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: TextButton(
-                          onPressed: authState.isLoading ? null : () {},
-                          child: const Text('Forgot Password?'),
-                        ),
-                      ),
+                      // Align(
+                      //   alignment: Alignment.centerRight,
+                      //   child: TextButton(
+                      //     onPressed: authState.isLoading ? null : () {},
+                      //     child: const Text('Forgot Password?'),
+                      //   ),
+                      // ),
                       const SizedBox(height: 10),
                       if (authState.error != null)
                         Padding(
