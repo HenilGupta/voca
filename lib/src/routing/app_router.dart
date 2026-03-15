@@ -6,8 +6,10 @@ import '../../login_screen.dart';
 import '../../ai_voice_screen.dart';
 import '../../signup_screen.dart';
 import '../../registration_screen.dart';
+import '../../profile_screen.dart';
 import '../../dating_screen.dart';
 import '../../chat_screen.dart';
+import '../../chat_history_screen.dart';
 import '../../profile_info_screen.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -35,9 +37,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const RegistrationScreen(),
       ),
       GoRoute(
+        path: '/profile-screen',
+        name: 'profile-screen',
+        builder: (context, state) => const ProfileScreen(),
+      ),
+      GoRoute(
         path: '/profile',
         name: 'profile',
         builder: (context, state) => const DatingScreen(),
+      ),
+      GoRoute(
+        path: '/chat-history',
+        name: 'chat-history',
+        builder: (context, state) => const ChatHistoryScreen(),
       ),
       GoRoute(
         path: '/chat',

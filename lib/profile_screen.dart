@@ -39,7 +39,7 @@ class UserProfile {
 final _demoProfile = UserProfile(
   name: 'Sophia',
   email: 'sophia@example.com',
-  phone: '+1 (555) 123-4567',
+  phone: '+91 9999999999',
   gender: 'Female',
   age: 25,
   location: 'San Francisco, CA',
@@ -58,14 +58,14 @@ final _demoProfile = UserProfile(
 // Screen
 // ---------------------------------------------------------------------------
 
-class RegistrationScreen extends StatefulWidget {
-  const RegistrationScreen({super.key});
+class ProfileScreen extends StatefulWidget {
+  const ProfileScreen({super.key});
 
   @override
-  State<RegistrationScreen> createState() => _RegistrationScreenState();
+  State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _RegistrationScreenState extends State<RegistrationScreen> {
+class _ProfileScreenState extends State<ProfileScreen> {
   late UserProfile _profile;
   late TextEditingController _nameController;
   late TextEditingController _emailController;
@@ -125,10 +125,43 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     _profile.bio = _bioController.text;
   }
 
-  void _completeRegistration() {
-    _updateProfile();
-    // Navigate directly to dating screen (profile/cards page)
-    context.goNamed('profile');
+  void _showLogoutConfirmation() {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF1A1A24),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text(
+            'Logout',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+          ),
+          content: const Text(
+            'Are you sure you want to logout?',
+            style: TextStyle(color: Colors.white70, fontSize: 14.5),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(color: Colors.white54, fontWeight: FontWeight.w600),
+              ),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFFF4566),
+              ),
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                context.goNamed('login');
+              },
+              child: const Text('Logout'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -138,14 +171,26 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF13131C),
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         title: const Text(
-          'Create Your Profile',
+          'My Profile',
           style: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.w700,
             fontSize: 18,
           ),
         ),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout_rounded, color: Color(0xFFFF4566), size: 24),
+            tooltip: 'Logout',
+            onPressed: _showLogoutConfirmation,
+          ),
+        ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -199,7 +244,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
           _EditableField(
             label: 'Phone',
             controller: _phoneController,
-            hint: '+1 (555) 123-4567',
+            hint: '+91 9999999999',
             keyboardType: TextInputType.phone,
           ),
 
@@ -287,9 +332,17 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
 
           const SizedBox(height: 28),
 
-          // Complete button
+          // Save button
           GestureDetector(
-            onTap: _completeRegistration,
+            onTap: () {
+              _updateProfile();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Profile updated successfully!'),
+                  backgroundColor: Color(0xFF34D66E),
+                ),
+              );
+            },
             child: Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 16),
@@ -313,7 +366,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                       color: Colors.white, size: 22),
                   SizedBox(width: 10),
                   Text(
-                    'Complete Registration',
+                    'Save Profile',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 16,
@@ -328,6 +381,17 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
 
           const SizedBox(height: 32),
         ],
+      ),
+      bottomNavigationBar: _BottomNavBar(
+        onMatchesPressed: () {
+          context.goNamed('profile');
+        },
+        onChatPressed: () {
+          context.goNamed('chat-history');
+        },
+        onProfilePressed: () {
+          // Already on profile screen
+        },
       ),
     );
   }
@@ -785,4 +849,120 @@ class _TagChip extends StatelessWidget {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Bottom Navigation Bar
+// ---------------------------------------------------------------------------
 
+class _BottomNavBar extends StatelessWidget {
+  const _BottomNavBar({
+    required this.onMatchesPressed,
+    required this.onChatPressed,
+    required this.onProfilePressed,
+  });
+
+  final VoidCallback onMatchesPressed;
+  final VoidCallback onChatPressed;
+  final VoidCallback onProfilePressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF13131C),
+        border: Border(
+          top: BorderSide(color: Colors.white.withOpacity(0.1), width: 1),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 8,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            // Matchs button
+            _NavBarItem(
+              icon: Icons.favorite_rounded,
+              label: 'Matchs',
+              isActive: false,
+              onTap: onMatchesPressed,
+            ),
+            // Chat button
+            _NavBarItem(
+              icon: Icons.message_rounded,
+              label: 'Chat',
+              isActive: false,
+              onTap: onChatPressed,
+            ),
+            // Profile button
+            _NavBarItem(
+              icon: Icons.person_rounded,
+              label: 'Profile',
+              isActive: true,
+              onTap: onProfilePressed,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Navigation Bar Item
+// ---------------------------------------------------------------------------
+
+class _NavBarItem extends StatelessWidget {
+  const _NavBarItem({
+    required this.icon,
+    required this.label,
+    required this.isActive,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool isActive;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            color: isActive ? const Color(0xFF9B4DFF) : Colors.white54,
+            size: 28,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color: isActive ? const Color(0xFF9B4DFF) : Colors.white54,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          if (isActive)
+            Container(
+              width: 24,
+              height: 2,
+              margin: const EdgeInsets.only(top: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xFF9B4DFF),
+                borderRadius: BorderRadius.circular(1),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
