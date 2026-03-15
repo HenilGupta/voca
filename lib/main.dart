@@ -1,12 +1,25 @@
 import 'package:accessibility_tools/accessibility_tools.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+import 'src/features/auth/application/auth_controller.dart';
 import 'src/routing/app_router.dart';
 import 'src/shared/theme/app_theme.dart';
 
-void main() {
-  runApp(const ProviderScope(child: VocaApp()));
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  final sharedPreferences = await SharedPreferences.getInstance();
+
+  runApp(
+    ProviderScope(
+      overrides: [
+        sharedPreferencesProvider.overrideWithValue(sharedPreferences),
+      ],
+      child: const VocaApp(),
+    ),
+  );
 }
 
 class VocaApp extends ConsumerWidget {

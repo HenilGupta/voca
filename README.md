@@ -11,6 +11,7 @@ A Flutter dating app built with a strict **Black & White monochrome theme** targ
 | State Management | `flutter_riverpod` + `riverpod_annotation` (code-gen) |
 | Navigation | `go_router` (declarative, typed routes) |
 | HTTP Networking | `dio` (with custom logging interceptors) |
+| Local Storage | `shared_preferences` (session persistence) |
 | Accessibility audit | `accessibility_tools` |
 | Haptics | `flutter_haptic` |
 | Fonts | `google_fonts` (Inter) |
@@ -24,7 +25,7 @@ lib/
 ├── main.dart                          # Entry point — ProviderScope + MaterialApp.router + AccessibilityTools
 └── src/
     ├── routing/
-    │   └── app_router.dart            # GoRouter — / (FeedScreen) and /profile/:userId (ProfileScreen)
+    │   └── app_router.dart            # GoRouter with auth guard, sign-in/sign-up, feed, and profile routes
     ├── shared/
     │   ├── theme/
     │   │   └── app_theme.dart         # Strict B&W ColorScheme.dark, bold 3px focus borders (keyboard nav)
@@ -35,6 +36,16 @@ lib/
     │       ├── accessible_button.dart    # Elevated/Outlined button with haptics + semantic label
     │       └── accessible_card.dart      # MergeSemantics card — screen reader reads as one announcement
     ├── features/
+    │   ├── auth/
+    │   │   ├── domain/
+    │   │   │   └── auth_models.dart          # SignInRequest, SignUpRequest, AuthResponse, AuthUser, AuthFailure
+    │   │   ├── data/
+    │   │   │   └── auth_repository.dart      # Real API auth repository (POST /auth/login, POST /auth/signup)
+    │   │   ├── application/
+    │   │   │   └── auth_controller.dart      # Auth state + SharedPreferences persistence + sign-in/sign-up/sign-out
+    │   │   └── presentation/
+    │   │       ├── sign_in_screen.dart       # App entry screen + login form + snackbar feedback
+    │   │       └── sign_up_screen.dart       # Registration form + snackbar feedback
     │   ├── feed/
     │   │   ├── domain/
     │   │   │   ├── feed_profile.dart          # Legacy FeedProfile model (DEPRECATED)
@@ -86,8 +97,15 @@ Routes are declared in `app_router.dart` using a `@riverpod` GoRouter:
 
 | Route | Name | Screen |
 |---|---|---|
-| `/` | `feed` | `FeedScreen` |
+| `/sign-in` | `signIn` | `SignInScreen` (initial route) |
+| `/sign-up` | `signUp` | `SignUpScreen` |
+| `/` | `feed` | `FeedScreen` (requires authentication) |
 | `/profile/:userId` | `profile` | `ProfileScreen` |
+
+Auth redirect behavior:
+- Unauthenticated users are redirected to `/sign-in`.
+- Authenticated users are redirected away from `/sign-in` and `/sign-up` to `/`.
+- Feed includes a **Settings** button with **Logout** action.
 
 Deep-link to a profile:
 ```dart
@@ -136,6 +154,23 @@ AppLogger.logError('API error details...');     // For error logging
 AppLogger.logData('Large JSON response...');     // For data logging
 ```
 
+### Authentication API
+Base URL:
+
+```text
+https://ckn4m91r-3000.inc1.devtunnels.ms
+```
+
+Implemented endpoints:
+- `POST /auth/login`
+- `POST /auth/signup`
+
+Auth responses store:
+- `userToken` (persistent identity token)
+- `sessionToken` (Bearer token for authenticated requests)
+
+Tokens are persisted using `SharedPreferences` and restored on app start.
+
 ### Repository Pattern
 The app uses a clean repository pattern for data fetching:
 
@@ -145,9 +180,13 @@ The app uses a clean repository pattern for data fetching:
 
 ### HTTP Client
 `apiClient` provider configures Dio with:
-- Custom logging interceptor for all requests/responses
-- Automatic fallback to mock data on network failures
 - Base URL configuration and timeout handling
+- Custom logging interceptor for all request/response/error events
+- Request duration logging and payload/header visibility for debugging
+
+### Authentication UX Feedback
+- Sign-in/sign-up success and failure states show in-page error text and `SnackBar` feedback.
+- Logout from Feed Settings shows a success `SnackBar` and redirects back to Sign In through auth guard.
 
 ---
 
@@ -156,9 +195,9 @@ The app uses a clean repository pattern for data fetching:
 - [x] ✅ **API Integration** — Repository pattern with Dio HTTP client
 - [x] ✅ **Chunked Logging** — Console-friendly logging utility
 - [x] ✅ **Error Handling** — Graceful fallbacks and user feedback
-- [ ] Replace mock API base URL with production endpoint
+- [x] ✅ Replace mock API base URL with real auth API endpoint
 - [ ] Implement swipe gesture (Dismissible or gesture detector) on the feed card
-- [ ] Add authentication and user management
+- [x] ✅ Add authentication and user management (Sign In, Sign Up, Logout, route guard)
 - [ ] Add a messaging feature (`features/messaging/`)
 - [ ] Implement match detection and notification
 - [ ] Add deep-link support for "Share Profile" via `/profile/:userId`
