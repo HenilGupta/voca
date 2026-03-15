@@ -57,10 +57,18 @@ class ChatScreen extends StatefulWidget {
     super.key,
     required this.matchName,
     required this.matchPhotoUrl,
+    required this.matchAge,
+    required this.matchBio,
+    required this.matchInterests,
+    required this.voiceDuration,
   });
 
   final String matchName;
   final String matchPhotoUrl;
+  final int matchAge;
+  final String matchBio;
+  final List<String> matchInterests;
+  final String voiceDuration;
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -204,6 +212,66 @@ class _ChatScreenState extends State<ChatScreen> {
       queryParameters: {
         'name': widget.matchName,
         'photo': widget.matchPhotoUrl,
+        'age': widget.matchAge.toString(),
+        'bio': widget.matchBio,
+        'interests': widget.matchInterests.join('|'),
+        'voice': widget.voiceDuration,
+      },
+    );
+  }
+
+  void _showContactInfoPopup() {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF1A1A24),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text(
+            'Share Contact Info',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+          ),
+          content: RichText(
+            text: TextSpan(
+              style: const TextStyle(color: Colors.white70, fontSize: 14.5, height: 1.45),
+              children: [
+                const TextSpan(text: 'Would you like to give contact info to '),
+                TextSpan(
+                  text: widget.matchName,
+                  style: const TextStyle(
+                    color: Color(0xFFCBA6FF),
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const TextSpan(text: '?'),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text(
+                'Not now',
+                style: TextStyle(color: Colors.white54, fontWeight: FontWeight.w600),
+              ),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF7A3FD4),
+              ),
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Contact request sent to ${widget.matchName}.'),
+                    backgroundColor: const Color(0xFF2D1F4E),
+                  ),
+                );
+              },
+              child: const Text('Yes, share'),
+            ),
+          ],
+        );
       },
     );
   }
@@ -217,7 +285,10 @@ class _ChatScreenState extends State<ChatScreen> {
       appBar: _ChatAppBar(
         name: widget.matchName,
         photoUrl: widget.matchPhotoUrl,
+        voiceDuration: widget.voiceDuration,
         onProfileTap: _goToProfileInfo,
+        onAudioTap: () {},
+        onContactInfoTap: _showContactInfoPopup,
       ),
       body: Column(
         children: [
@@ -258,15 +329,21 @@ class _ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
   const _ChatAppBar({
     required this.name,
     required this.photoUrl,
+    required this.voiceDuration,
     required this.onProfileTap,
+    required this.onAudioTap,
+    required this.onContactInfoTap,
   });
 
   final String name;
   final String photoUrl;
+  final String voiceDuration;
   final VoidCallback onProfileTap;
+  final VoidCallback onAudioTap;
+  final VoidCallback onContactInfoTap;
 
   @override
-  Size get preferredSize => const Size.fromHeight(64);
+  Size get preferredSize => const Size.fromHeight(72);
 
   @override
   Widget build(BuildContext context) {
@@ -289,34 +366,74 @@ class _ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
               backgroundColor: const Color(0xFF2D1F4E),
             ),
             const SizedBox(width: 10),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const Text(
+                    'Tap to view profile',
+                    style: TextStyle(
+                      color: Colors.white54,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Audio button beside name
+            Semantics(
+              label: 'Play voice intro',
+              button: true,
+              child: GestureDetector(
+                onTap: onAudioTap,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2D1F4E),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: const Color(0xFF7A3FD4)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.play_arrow_rounded,
+                        color: Color(0xFFCBA6FF),
+                        size: 18,
+                      ),
+                      const SizedBox(width: 3),
+                      Text(
+                        voiceDuration,
+                        style: const TextStyle(
+                          color: Color(0xFFCBA6FF),
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const Text(
-                  'Tap to view profile',
-                  style: TextStyle(
-                    color: Colors.white54,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
+              ),
             ),
           ],
         ),
       ),
       actions: [
+        // Contact info button instead of 3-dots
         IconButton(
-          icon: const Icon(Icons.more_vert_rounded, color: Colors.white70),
-          onPressed: () {},
+          icon: const Icon(Icons.person_add_alt_1_rounded, color: Colors.white70),
+          tooltip: 'Share contact info',
+          onPressed: onContactInfoTap,
         ),
       ],
     );

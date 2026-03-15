@@ -502,6 +502,10 @@ class _ActionBar extends StatelessWidget {
             queryParameters: {
               'name': profile.name,
               'photo': profile.photoUrl,
+              'age': profile.age.toString(),
+              'bio': profile.bio,
+              'interests': profile.interests.join('|'),
+              'voice': profile.voiceDuration,
             },
           );
         },
